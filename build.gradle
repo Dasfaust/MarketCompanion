@@ -14,7 +14,7 @@ buildscript {
 apply plugin: 'forge'
 
 version = "1.0"
-group= "me.dasfaust" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+group= "me.dasfaust"
 archivesBaseName = "MarketCompanion"
 
 minecraft {
@@ -34,18 +34,13 @@ dependencies {
     compile 'com.cedarsoftware:json-io:2.6.0'
 }
 
-processResources
-{
-    // replace stuff in mcmod.info, nothing else
+processResources {
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod/info'
-
-        // replace version and mcversion
         expand 'version':project.version, 'mcversion':project.minecraft.version
     }
 
-    // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
-        // exclude 'mcmod.info'
+        exclude 'mcmod.info'
     }
 }
