@@ -54,7 +54,7 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 	
 	@Override
 	public boolean hasItemMeta() {
-		return false;
+		return true;
 	}
 	
 	@Override
