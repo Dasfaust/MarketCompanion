@@ -1,0 +1,16 @@
+[
+{
+  "modid": "MarketCompanion",
+  "name": "MarketCompanion",
+  "description": "Forge compatibility mod for GlobalMarket",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Dasfaust"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

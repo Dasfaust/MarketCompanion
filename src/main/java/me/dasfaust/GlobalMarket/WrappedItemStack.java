@@ -1,26 +1,22 @@
 package me.dasfaust.GlobalMarket;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraft.item.Item;
+import net.minecraft.nbt.*;
+import org.apache.commons.codec.binary.Base64;
 import org.bukkit.Material;
-import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import com.cedarsoftware.util.io.JsonReader;
-import com.cedarsoftware.util.io.JsonWriter;
 import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
 
-import cpw.mods.fml.common.registry.LanguageRegistry;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
 
 public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 
@@ -34,12 +30,12 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 	
 	@Override
 	public Material getType() {
-		return Material.getMaterial(stack.itemID);
+		return Material.getMaterial(Item.getIdFromItem(stack.getItem()));
 	}
 	
 	@Override
 	public int getTypeId() {
-		return stack.itemID;
+		return Item.getIdFromItem(stack.getItem());
 	}
 	
 	@Override
@@ -99,7 +95,9 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 	
 	public String serializeJSON() {
 		try {
-			return JsonWriter.objectToJson(stack);
+            int id = Item.getIdFromItem(stack.getItem());
+            int du = stack.getItemDamage();
+            return MarketCompanion.gson.toJson(new SerializedStack(id, du, Base64.encodeBase64String(CompressedStreamTools.compress(stack.getTagCompound()))));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -111,16 +109,33 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 	}
 	
 	public static WrappedItemStack unserializeJSON(String json) {
-		ItemStack item;
-		try {
-			item = (ItemStack) JsonReader.jsonToJava(json);
-			return new WrappedItemStack(item);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        try {
+            SerializedStack s = MarketCompanion.gson.fromJson(json, SerializedStack.class);
+            ItemStack st = new ItemStack(Item.getItemById(s.id));
+            st.setItemDamage(s.du);
+            ByteArrayInputStream in = new ByteArrayInputStream(Base64.decodeBase64(s.nbt));
+            st.setTagCompound(CompressedStreamTools.readCompressed(in));
+            in.close();
+            return new WrappedItemStack(st);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
 		return null;
 	}
-	
+
+    public class SerializedStack {
+
+        public int id;
+        public int du;
+        public String nbt;
+
+        public SerializedStack(int id,int du, String nbt) {
+            this.id = id;
+            this.du = du;
+            this.nbt = nbt;
+        }
+    }
+
 	public class WrappedItemMeta implements org.bukkit.inventory.meta.ItemMeta {
 
 		private ItemStack stack;
@@ -163,11 +178,11 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 					NBTTagCompound disp = comp.getCompoundTag("display");
 					if (disp.hasKey("Lore")) {
 						ImmutableList.Builder<String> loreBuilder = ImmutableList.builder();
-						NBTTagList loreNbt = disp.getTagList("Lore");
+						NBTTagList loreNbt = (NBTTagList) disp.getTag("Lore");
 						for (int i = 0; i < loreNbt.tagCount(); i++) {
-							NBTTagString str = ((NBTTagString) loreNbt.tagAt(i));
+							String str = loreNbt.getStringTagAt(i);
 							if (str != null) {
-								loreBuilder.add(str.data);
+								loreBuilder.add(str);
 							}
 						}
 						lore.addAll(loreBuilder.build());
@@ -229,8 +244,8 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 			} else {
 				disp = comp.getCompoundTag("display");
 			}
-			disp.setTag("Name", new NBTTagString("", arg0));
-			comp.setCompoundTag("display", disp);
+			disp.setTag("Name", new NBTTagString(arg0));
+			comp.setTag("display", disp);
 		}
 
 		@Override
@@ -250,10 +265,10 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 				if (str == null || str.length() == 0) {
 					continue;
 				}
-				lore.appendTag(new NBTTagString("", str));
+				lore.appendTag(new NBTTagString(str));
 			}
 			disp.setTag("Lore", lore);
-			comp.setCompoundTag("display", disp);
+			comp.setTag("display", disp);
 			stack.setTagCompound(comp);
 		}
 		

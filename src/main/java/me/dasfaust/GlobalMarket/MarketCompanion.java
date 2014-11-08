@@ -1,22 +1,16 @@
 package me.dasfaust.GlobalMarket;
 
-import org.bukkit.inventory.Inventory;
-
+import com.google.gson.Gson;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.network.NetworkMod;
 
-@Mod(modid = "MarketCompanion", name="MarketCompanion", version="1.0.0")
-@NetworkMod(clientSideRequired = false, serverSideRequired = false)
+import java.util.List;
 
+@Mod(modid = "MarketCompanion", name = "MarketCompanion", version = "2.0.0", acceptableRemoteVersions = "*")
 public class MarketCompanion {
 
 	@Instance("MarketCompanion")
@@ -25,6 +19,8 @@ public class MarketCompanion {
 	public static MarketCompanion getInstance() {
 		return instance;
 	}
+
+    public static Gson gson = new Gson();
 	
 	public WrappedItemStack getWrappedForgeItemStack(Object bInv, int slot) throws IllegalArgumentException {
 		IInventory inv = ((IInventory) bInv);
@@ -36,10 +32,7 @@ public class MarketCompanion {
 	}
 	
 	public void addToPlayerInventory(String playerName, int slot, org.bukkit.inventory.ItemStack stack) throws IllegalArgumentException {
-		EntityPlayer player = MinecraftServer.getServer().getConfigurationManager().getPlayerForUsername(playerName);
-		if (player == null) {
-			throw new IllegalArgumentException("Player is null!");
-		}
+		EntityPlayer player = findPlayer(playerName);
 		if (!(stack instanceof WrappedItemStack)) {
 			throw new IllegalArgumentException("ItemStack is not an instance of WrappedItemStack");
 		}
@@ -73,4 +66,12 @@ public class MarketCompanion {
 	public org.bukkit.inventory.ItemStack wrap(Object itemStack) {
 		return new WrappedItemStack((ItemStack) itemStack);
 	}
+
+    // There's probably a method for this :/
+    private EntityPlayer findPlayer(String name) {
+        for (EntityPlayer player : (List<EntityPlayer>) MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
+            if (player.getDisplayName().equals(name)) return player;
+        }
+        throw new IllegalArgumentException(String.format("No player by the name of %s found!", name));
+    }
 }
