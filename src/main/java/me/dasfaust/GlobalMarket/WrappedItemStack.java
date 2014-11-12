@@ -97,7 +97,7 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
 		try {
             int id = Item.getIdFromItem(stack.getItem());
             int du = stack.getItemDamage();
-            return MarketCompanion.gson.toJson(new SerializedStack(id, du, Base64.encodeBase64String(CompressedStreamTools.compress(stack.getTagCompound()))));
+            return MarketCompanion.gson.toJson(new SerializedStack(id, du, stack.getTagCompound() == null ? "" : Base64.encodeBase64String(CompressedStreamTools.compress(stack.getTagCompound()))));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -113,9 +113,11 @@ public class WrappedItemStack extends org.bukkit.inventory.ItemStack {
             SerializedStack s = MarketCompanion.gson.fromJson(json, SerializedStack.class);
             ItemStack st = new ItemStack(Item.getItemById(s.id));
             st.setItemDamage(s.du);
-            ByteArrayInputStream in = new ByteArrayInputStream(Base64.decodeBase64(s.nbt));
-            st.setTagCompound(CompressedStreamTools.readCompressed(in));
-            in.close();
+            if (s.nbt != null && s.nbt.length() > 0) {
+                ByteArrayInputStream in = new ByteArrayInputStream(Base64.decodeBase64(s.nbt));
+                st.setTagCompound(CompressedStreamTools.readCompressed(in));
+                in.close();
+            }
             return new WrappedItemStack(st);
         } catch(Exception e) {
             e.printStackTrace();
